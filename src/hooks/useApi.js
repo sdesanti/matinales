@@ -2,9 +2,7 @@ import { useAuth } from '../context/AuthContext';
 import { useCallback } from 'react';
 
 // 🚨 CORRECCIÓN 1: La base es solo el host y puerto.
-const API_BASE_URL = import.meta.env.MODE === 'production' 
-    ? 'https://matinales-chile-api.fly.dev/'  // DE FLY.IO
-    : 'http://localhost:3001';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 /**
  * Hook para manejar peticiones autenticadas a la API (POST, PUT, DELETE).
