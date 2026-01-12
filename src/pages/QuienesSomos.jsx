@@ -7,18 +7,11 @@ function QuienesSomos() {
     // 'py-8' añade padding vertical. 'max-w-4xl' limita el ancho del contenido para mejor legibilidad.
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       {/* Título principal de la sección "¿Quiénes Somos?" */}
-      <motion.h1
-        className="text-4xl font-bold text-center mb-8 text-orange-600" // Clases Tailwind para tamaño, negrita, centrado, margen inferior y color.
-        initial={{ opacity: 0, y: -20 }} // Animación inicial: opacidad 0, movido 20px hacia arriba
-        animate={{ opacity: 1, y: 0 }} // Animación final: opacidad 1, posición original
-        transition={{ duration: 0.6 }} // Duración de la transición
-      >
-        ¿Quiénes Somos?
-      </motion.h1>
+      <h1 className="mb-5 text-center custom-h1">¿Quiénes somos?</h1>
 
       {/* Sección principal del contenido de texto */}
       <motion.section
-        className="bg-white rounded-xl shadow-lg p-6 md:p-8 mb-8" // Fondo blanco, bordes redondeados, sombra, padding responsivo, margen inferior.
+        className="bg-white rounded-xl shadow-lg p-6 md:p-8 mb-12" // Fondo blanco, bordes redondeados, sombra, padding responsivo, margen inferior.
         initial={{ opacity: 0, y: 20 }} // Animación inicial
         animate={{ opacity: 1, y: 0 }} // Animación final
         transition={{ delay: 0.2, duration: 0.5 }} // Retraso y duración de la transición
@@ -81,7 +74,8 @@ function QuienesSomos() {
         </p>
 
         {/* Subtítulo para la sección de investigación */}
-        <h2 className="text-2xl font-bold mt-8 mb-4 text-orange-600">
+        <h2 className="text-2xl font-bold mt-8 mb-4 text-orange-600"
+        style={{ color: 'var(--color-principal)' }}>
           Nuestra Investigación
         </h2>
         <p className="mb-4 text-gray-800 leading-relaxed text-lg">
@@ -101,7 +95,8 @@ function QuienesSomos() {
         </p>
 
         {/* Subtítulo para objetivos específicos */}
-        <h3 className="text-xl font-bold mt-6 mb-3 text-orange-600">
+        <h3 className="text-xl font-bold mt-6 mb-3 text-orange-600"
+        style={{ color: 'var(--color-principal)' }}>
           Objetivos Específicos
         </h3>
         {/* Lista de objetivos */}
@@ -121,7 +116,8 @@ function QuienesSomos() {
         </ul>
 
         {/* Subtítulo para diseño metodológico */}
-        <h3 className="text-xl font-bold mt-6 mb-3 text-orange-600">
+        <h3 className="text-xl font-bold mt-6 mb-3 text-orange-600"
+        style={{ color: 'var(--color-principal)' }}>
           Diseño Metodológico
         </h3>
         <p className="mb-4 text-gray-800 leading-relaxed text-lg">
@@ -150,7 +146,8 @@ function QuienesSomos() {
         </p>
 
         {/* Subtítulo para bibliografía */}
-        <h3 className="text-xl font-bold mt-6 mb-3 text-orange-600">
+        <h3 className="text-xl font-bold mt-6 mb-3 text-orange-600"
+        style={{ color: 'var(--color-principal)' }}>
           Bibliografía
         </h3>
         {/* Lista de bibliografía */}
@@ -164,10 +161,6 @@ function QuienesSomos() {
           <li>Jiménez, P. (2021). Pandemia y matinales: El surgimiento y consolidación de un nuevo espacio para el desarrollo del espectáculo político. Tesis para optar al grado de Magíster en Comunicación Política. Universidad de Chile.</li>
           <li>Winocur, R. (2002) Ciudadanos mediáticos. La construcción de lo público en la radio. Barcelona: Editorial Gedisa S.A.</li>
         </ul>
-        {/* Nota del editor */}
-        <p className="mt-4 text-gray-600 text-sm italic">
-          [LM1] Se incluye como referencia? En el proyecto no salía...
-        </p>
       </motion.section>
     </div>
   );
