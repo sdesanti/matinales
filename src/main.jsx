@@ -10,7 +10,7 @@ import 'bootstrap/dist/js/bootstrap.bundle.min.js'
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <AuthProvider>
-      <BrowserRouter>
+      <BrowserRouter basename="/matinales">
         <App />
       </BrowserRouter>
     </AuthProvider>
