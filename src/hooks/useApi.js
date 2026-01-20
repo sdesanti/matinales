@@ -2,7 +2,7 @@ import { useAuth } from '../context/AuthContext';
 import { useCallback } from 'react';
 
 // 🚨 CORRECCIÓN 1: La base es solo el host y puerto.
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_BASE_URL = 'https://matinales-chile-api.fly.dev';
 
 /**
  * Hook para manejar peticiones autenticadas a la API (POST, PUT, DELETE).
@@ -31,7 +31,8 @@ export const useApi = () => {
 
         // 🚨 CORRECCIÓN 2: Asegurar que la URL incluye '/api' entre la base y el endpoint.
         // El endpoint siempre debe comenzar con '/' (e.g., '/noticias')
-        const url = `${API_BASE_URL}/api${endpoint}`;
+        const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+        const url = `${API_BASE_URL}/api${cleanEndpoint}`;
 
         const response = await fetch(url, config);
 

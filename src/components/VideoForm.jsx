@@ -59,6 +59,18 @@ const VideoForm = ({ videoInicial, onSave, onClose }) => {
         setError(null);
         setIsSubmitting(true);
 
+        // --- LÓGICA DE LIMPIEZA DE URL ---
+    let finalUrl = formData.url_embed;
+    // Si es una URL de YouTube estándar, la convertimos a embed
+    if (finalUrl.includes('youtube.com/watch?v=')) {
+        const videoId = finalUrl.split('v=')[1].split('&')[0];
+        finalUrl = `https://www.youtube.com/embed/${videoId}`;
+    } else if (finalUrl.includes('youtu.be/')) {
+        const videoId = finalUrl.split('youtu.be/')[1].split('?')[0];
+        finalUrl = `https://www.youtube.com/embed/${videoId}`;
+    }
+    // ---------------------------------
+
         const dataToSend = new FormData();
 
         // 1. Adjuntar los campos de texto

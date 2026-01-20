@@ -1,10 +1,12 @@
-/// src/pages/Publicaciones.jsx
+// src/pages/Publicaciones.jsx (CORREGIDO)
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { BookOpen, Calendar, Download } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useApi } from '../hooks/useApi'; 
 
-const API_BASE_URL = 'http://localhost:3001';
+// URL Base para archivos (Imágenes y PDFs)
+const SERVER_BASE_URL = 'https://matinales-chile-api.fly.dev';
 
 const formatDate = (dateString) => {
     if (!dateString) return 'Fecha desconocida';
@@ -16,13 +18,15 @@ const Publicaciones = () => {
     const [publicaciones, setPublicaciones] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
+    
+    // 🚨 Usamos nuestro hook personalizado
+    const { get } = useApi();
 
     const fetchPublicaciones = async () => {
         setIsLoading(true);
         try {
-            const response = await fetch(`${API_BASE_URL}/api/publicaciones`); 
-            if (!response.ok) throw new Error(`Error: ${response.statusText}`);
-            const data = await response.json();
+            // 🚨 El hook ya sabe que debe ir a /api/publicaciones
+            const data = await get('/publicaciones'); 
             setPublicaciones(data);
             setError(null);
         } catch (err) {
@@ -35,7 +39,7 @@ const Publicaciones = () => {
 
     useEffect(() => {
         fetchPublicaciones();
-    }, []);
+    }, [get]);
 
     if (isLoading) return <div className="text-center p-5">Cargando publicaciones...</div>;
     if (error) return <div className="alert alert-danger text-center p-4">Error: {error}</div>;
@@ -47,14 +51,14 @@ const Publicaciones = () => {
             <div className="list-group">
                 {publicaciones.map((pub, index) => {
                     
-                    // 1. CORRECCIÓN DE IMAGEN: Usamos 'imagen' (nombre en DB)
+                    // Portada: Siempre HTTPS
                     const portadaSrc = pub.imagen 
-                        ? `${API_BASE_URL}${pub.imagen}` 
+                        ? (pub.imagen.startsWith('http') ? pub.imagen : `${SERVER_BASE_URL}${pub.imagen}`)
                         : '/placeholder-book.svg';
 
-                    // 2. CORRECCIÓN DE PDF: Usamos 'urlDescarga' (nombre en DB)
+                    // PDF: Si es ruta relativa (empieza con /uploads), le ponemos la base de Fly
                     const linkDescarga = pub.urlDescarga 
-                        ? (pub.urlDescarga.startsWith('http') ? pub.urlDescarga : `${API_BASE_URL}${pub.urlDescarga}`)
+                        ? (pub.urlDescarga.startsWith('http') ? pub.urlDescarga : `${SERVER_BASE_URL}${pub.urlDescarga}`)
                         : null;
 
                     return (
@@ -67,7 +71,6 @@ const Publicaciones = () => {
                             style={{ borderRadius: '12px' }}
                         >
                             <div className="row g-3 align-items-center">
-                                {/* Columna 1: Portada con tamaño fijo para evitar desalineación */}
                                 <div className="col-auto d-none d-sm-block">
                                     <div style={{ width: '85px', height: '115px', overflow: 'hidden' }} className="rounded shadow-sm border">
                                         <img 
@@ -78,7 +81,6 @@ const Publicaciones = () => {
                                     </div>
                                 </div>
 
-                                {/* Columna 2: Detalles */}
                                 <div className="col">
                                     <div className="d-flex flex-column flex-md-row justify-content-between align-items-start">
                                         <h5 className="mb-1 text-primary fw-bold" style={{ fontSize: '1.15rem' }}>
@@ -105,7 +107,6 @@ const Publicaciones = () => {
                                         {formatDate(pub.fecha)} 
                                     </div>
 
-                                    {/* Resumen limitado para mantener la alineación visual */}
                                     <p className="mb-2 text-dark small" style={{ 
                                         display: '-webkit-box',
                                         WebkitLineClamp: '3',

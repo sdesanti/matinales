@@ -1,15 +1,15 @@
-// src/pages/Videos.jsx (VISTA PÚBLICA - CORREGIDA)
+// src/pages/Videos.jsx (CORREGIDO Y OPTIMIZADO)
 
 import React, { useState, useEffect } from 'react';
-import { PlayCircle, Calendar, Youtube } from 'lucide-react';
+import { PlayCircle, Calendar, Youtube as YoutubeIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useApi } from '../hooks/useApi'; // 🚨 Importamos el hook
 
-const API_BASE_URL = 'http://localhost:3001';
-const VIDEOS_API_URL = `${API_BASE_URL}/api/videos`;
+// URL Base para las miniaturas locales
+const SERVER_BASE_URL = 'https://matinales-chile-api.fly.dev';
 
 // --- FUNCIONES AUXILIARES ---
 
-// 1. Extraer ID de YouTube
 const getYoutubeId = (url) => {
     if (!url || typeof url !== 'string') return null;
     const regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
@@ -17,26 +17,28 @@ const getYoutubeId = (url) => {
     return (match && match[2].length === 11) ? match[2] : null;
 };
 
-// 2. Generar URL de Embed (ESTA FALTABA EN TU CÓDIGO)
 const getYoutubeEmbedUrl = (url) => {
     const id = getYoutubeId(url);
     if (id) {
         return `https://www.youtube.com/embed/${id}`;
     }
-    return url; // Si no es YouTube, devuelve la URL tal cual
+    // Aseguramos que si no es YouTube, al menos use HTTPS si la URL lo permite
+    return url.replace('http://', 'https://');
 };
 
-// 3. Obtener miniatura (Local > YouTube > Placeholder)
 const getThumbnailUrl = (video) => {
+    // 1. Si hay miniatura subida al servidor
     if (video.miniatura_url) {
-        return `${API_BASE_URL}${video.miniatura_url}`;
+        return `${SERVER_BASE_URL}${video.miniatura_url}`;
     }
     
+    // 2. Si es YouTube, obtener miniatura oficial
     const youtubeId = getYoutubeId(video.url_embed);
     if (youtubeId) {
         return `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`;
     }
 
+    // 3. Placeholder de seguridad
     return 'https://via.placeholder.com/640x360?text=Video+Disponible'; 
 };
 
@@ -46,13 +48,15 @@ const Videos = () => {
     const [error, setError] = useState(null);
     const [activeVideoId, setActiveVideoId] = useState(null); 
 
+    const { get } = useApi(); // 🚨 Usamos el hook
+
     const fetchVideos = async () => {
         setIsLoading(true);
         try {
-            const response = await fetch(VIDEOS_API_URL);
-            if (!response.ok) throw new Error(`Error: ${response.statusText}`);
-            const data = await response.json();
+            // 🚨 Llamada limpia a través del hook
+            const data = await get('/videos');
             setVideos(data);
+            setError(null);
         } catch (err) {
             console.error("Fallo al cargar videos:", err);
             setError(err.message);
@@ -63,7 +67,7 @@ const Videos = () => {
 
     useEffect(() => {
         fetchVideos();
-    }, []);
+    }, [get]);
 
     const handlePlayClick = (videoId) => {
         setActiveVideoId(videoId);
@@ -114,15 +118,15 @@ const Videos = () => {
                                                 cursor: 'pointer',
                                                 display: 'flex',
                                                 justifyContent: 'center',
+                                                alignPosition: 'center',
                                                 alignItems: 'center'
                                             }}
                                             onClick={() => handlePlayClick(video.id)}
                                         >
-                                            {/* Efecto de Hover en el botón de play */}
                                             <div className="play-button-wrapper">
                                                 <PlayCircle 
                                                     size={80} 
-                                                    className="text-white opacity-75 transition-all"
+                                                    className="text-white opacity-75 transition-all play-icon-hover"
                                                     style={{ filter: 'drop-shadow(0px 0px 10px rgba(0,0,0,0.5))' }}
                                                 />
                                             </div>
@@ -132,7 +136,7 @@ const Videos = () => {
                                 
                                 <div className="card-body">
                                     <h5 className="card-title text-primary d-flex align-items-center">
-                                        <Youtube size={20} className="me-2 text-danger" />
+                                        <YoutubeIcon size={20} className="me-2 text-danger" />
                                         {video.titulo}
                                     </h5>
                                     <p className="card-subtitle mb-2 text-muted small d-flex align-items-center">

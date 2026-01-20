@@ -1,10 +1,11 @@
-// src/components/InvestigadorForm.jsx (Código Corregido y Sincronizado)
+// src/components/InvestigadorForm.jsx (VERSION OPTIMIZADA)
 
 import React, { useState, useEffect } from 'react';
 import { useApi } from '../hooks/useApi';
-import { AlertTriangle } from 'lucide-react'; 
+import { AlertTriangle, Upload, User, X } from 'lucide-react'; 
 
 const API_ENDPOINT = '/investigadores';
+const SERVER_URL = 'https://matinales-chile-api.fly.dev';
 
 const InvestigadorForm = ({ investigadorInicial, onSave, onClose }) => {
     const { post, put } = useApi();
@@ -12,9 +13,9 @@ const InvestigadorForm = ({ investigadorInicial, onSave, onClose }) => {
     
     const [formData, setFormData] = useState({
         nombre: '',
-        cargo: '', // Sincronizado con DB
-        resenaCorta: '', // Sincronizado con DB
-        resenaLarga: '', // Sincronizado con DB
+        cargo: '',
+        resenaCorta: '',
+        resenaLarga: '',
         foto_url_actual: '', 
     });
     
@@ -30,10 +31,16 @@ const InvestigadorForm = ({ investigadorInicial, onSave, onClose }) => {
                 cargo: investigadorInicial.cargo || '',
                 resenaCorta: investigadorInicial.resenaCorta || '',
                 resenaLarga: investigadorInicial.resenaLarga || '',
-                foto_url_actual: investigadorInicial.foto || '',
+                foto_url_actual: investigadorInicial.foto_url || '',
             });
-            // Si la foto es una URL externa o local, la mostramos
-            setPreviewUrl(investigadorInicial.foto || null);
+            
+            // Lógica de previsualización robusta
+            if (investigadorInicial.foto_url) {
+                const fullUrl = investigadorInicial.foto_url.startsWith('http') 
+                    ? investigadorInicial.foto_url 
+                    : `${SERVER_URL}${investigadorInicial.foto_url}`;
+                setPreviewUrl(fullUrl);
+            }
         }
     }, [investigadorInicial]);
 
@@ -44,12 +51,9 @@ const InvestigadorForm = ({ investigadorInicial, onSave, onClose }) => {
 
     const handleFileChange = (e) => {
         const file = e.target.files[0];
-        setImageFile(file);
-        
         if (file) {
-            setPreviewUrl(URL.createObjectURL(file));
-        } else {
-            setPreviewUrl(formData.foto_url_actual || null);
+            setImageFile(file);
+            setPreviewUrl(URL.createObjectURL(file)); // Crea URL temporal local
         }
     };
 
@@ -58,6 +62,7 @@ const InvestigadorForm = ({ investigadorInicial, onSave, onClose }) => {
         setError(null);
         setIsSubmitting(true);
 
+        // Usamos FormData para poder enviar el archivo binario de la imagen
         const dataToSend = new FormData();
         dataToSend.append('nombre', formData.nombre);
         dataToSend.append('cargo', formData.cargo);
@@ -66,89 +71,88 @@ const InvestigadorForm = ({ investigadorInicial, onSave, onClose }) => {
         
         if (imageFile) {
             dataToSend.append('foto', imageFile); 
-        } else if (isEditing) {
-            dataToSend.append('foto_url_actual', formData.foto_url_actual);
         }
 
         try {
             let response;
             const endpoint = isEditing ? `${API_ENDPOINT}/${investigadorInicial.id}` : API_ENDPOINT;
             
-            // Enviamos como FormData (tercer parámetro 'true')
+            // Enviamos el tercer parámetro como 'true' para indicar FormData al useApi
             if (isEditing) {
                 response = await put(endpoint, dataToSend, true); 
             } else {
                 response = await post(endpoint, dataToSend, true);
             }
 
-            onSave(response.data || response); 
+            onSave(response); 
         } catch (err) {
-            console.error('Error al guardar:', err);
-            setError(err.message || 'Error al conectar con el servidor.');
+            setError(err.message || 'Error al procesar la solicitud.');
         } finally {
             setIsSubmitting(false);
         }
     };
 
     return (
-        <form onSubmit={handleSubmit} className="p-3">
-            <h3 className="mb-4">{isEditing ? 'Editar Investigador' : 'Añadir Nuevo Investigador'}</h3>
-
+        <form onSubmit={handleSubmit} className="row g-3">
             {error && (
-                <div className="alert alert-danger d-flex align-items-center mb-3">
-                    <AlertTriangle size={20} className="me-2" />
-                    {error}
+                <div className="col-12">
+                    <div className="alert alert-danger d-flex align-items-center">
+                        <AlertTriangle size={20} className="me-2" />
+                        {error}
+                    </div>
                 </div>
             )}
 
-            <div className="mb-3">
-                <label className="form-label">Nombre Completo *</label>
-                <input type="text" className="form-control" name="nombre" value={formData.nombre} onChange={handleChange} required />
-            </div>
-            
-            <div className="mb-3">
-                <label className="form-label">Cargo / Rol *</label>
-                <input type="text" className="form-control" name="cargo" placeholder="Ej: Investigador Responsable" value={formData.cargo} onChange={handleChange} required />
-            </div>
-
-            <div className="mb-3">
-                <label className="form-label">Reseña Corta</label>
-                <textarea className="form-control" name="resenaCorta" rows="2" value={formData.resenaCorta} onChange={handleChange} placeholder="Breve descripción de una línea..." />
-            </div>
-
-            <div className="mb-3">
-                <label className="form-label">Reseña Larga (Biografía)</label>
-                <textarea className="form-control" name="resenaLarga" rows="5" value={formData.resenaLarga} onChange={handleChange} placeholder="Trayectoria completa, títulos, etc..." />
-            </div>
-
-            <div className="mb-4 p-3 border rounded bg-light">
-                <label className="form-label fw-bold d-block">Foto de Perfil</label>
+            <div className="col-md-8">
+                <div className="mb-3">
+                    <label className="form-label fw-bold">Nombre Completo *</label>
+                    <input type="text" className="form-control" name="nombre" value={formData.nombre} onChange={handleChange} required placeholder="Juan Pérez" />
+                </div>
                 
-                {previewUrl && (
-                    <div className="mb-2 text-center">
-                        <img 
-                            src={previewUrl.startsWith('http') ? previewUrl : `http://localhost:3001${previewUrl}`} 
-                            alt="Previsualización" 
-                            style={{ width: '120px', height: '120px', objectFit: 'cover', borderRadius: '50%' }} 
-                            className="img-thumbnail shadow-sm"
-                        />
-                    </div>
-                )}
+                <div className="mb-3">
+                    <label className="form-label fw-bold">Cargo / Rol en el Proyecto *</label>
+                    <input type="text" className="form-control" name="cargo" placeholder="Ej: Investigador Principal" value={formData.cargo} onChange={handleChange} required />
+                </div>
 
-                <input 
-                    type="file" 
-                    className="form-control" 
-                    name="foto" 
-                    accept="image/*" 
-                    onChange={handleFileChange} 
-                    required={!isEditing && !formData.foto_url_actual}
-                />
+                <div className="mb-3">
+                    <label className="form-label fw-bold">Reseña Corta</label>
+                    <textarea className="form-control" name="resenaCorta" rows="2" value={formData.resenaCorta} onChange={handleChange} placeholder="Una oración que resuma su perfil..." />
+                </div>
             </div>
 
-            <div className="d-flex justify-content-end mt-4">
-                <button type="button" className="btn btn-secondary me-2" onClick={onClose} disabled={isSubmitting}>Cancelar</button>
-                <button type="submit" className="btn btn-warning" disabled={isSubmitting}>
-                    {isSubmitting ? 'Guardando...' : (isEditing ? 'Guardar Cambios' : 'Añadir Investigador')}
+            <div className="col-md-4 text-center">
+                <label className="form-label fw-bold d-block">Imagen de Perfil</label>
+                <div className="mb-3 d-flex flex-column align-items-center">
+                    <div className="position-relative border rounded-circle bg-light d-flex align-items-center justify-content-center shadow-sm mb-3" 
+                         style={{ width: '160px', height: '160px', overflow: 'hidden' }}>
+                        {previewUrl ? (
+                            <img src={previewUrl} alt="Preview" className="w-100 h-100" style={{ objectFit: 'cover' }} />
+                        ) : (
+                            <User size={64} className="text-muted" />
+                        )}
+                    </div>
+                    <label className="btn btn-outline-primary btn-sm px-4">
+                        <Upload size={16} className="me-2" />
+                        Subir Foto
+                        <input type="file" className="d-none" name="foto" accept="image/*" onChange={handleFileChange} />
+                    </label>
+                    <small className="text-muted d-block mt-2">Formatos: JPG, PNG. Max 2MB</small>
+                </div>
+            </div>
+
+            <div className="col-12">
+                <label className="form-label fw-bold">Reseña Larga (Biografía)</label>
+                <textarea className="form-control" name="resenaLarga" rows="4" value={formData.resenaLarga} onChange={handleChange} placeholder="Detalla su formación académica y experiencia..." />
+            </div>
+
+            <div className="col-12 border-top pt-3 mt-4 d-flex justify-content-end gap-2">
+                <button type="button" className="btn btn-light px-4 border" onClick={onClose} disabled={isSubmitting}>
+                    Cancelar
+                </button>
+                <button type="submit" className="btn btn-primary px-5 shadow-sm" disabled={isSubmitting}>
+                    {isSubmitting ? (
+                        <span className="spinner-border spinner-border-sm me-2"></span>
+                    ) : (isEditing ? 'Actualizar Investigador' : 'Guardar Investigador')}
                 </button>
             </div>
         </form>

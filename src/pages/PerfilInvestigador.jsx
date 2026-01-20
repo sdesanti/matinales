@@ -1,9 +1,13 @@
+// src/pages/PerfilInvestigador.jsx (CORREGIDO)
+
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Briefcase, ArrowLeft, Mail, Link as LinkIcon, BookOpen, Film } from 'lucide-react'; 
 import { motion } from 'framer-motion';
+import { useApi } from '../hooks/useApi'; 
 
-const API_BASE_URL = 'http://localhost:3001'; 
+// URL Base limpia para las imágenes
+const SERVER_BASE_URL = 'https://matinales-chile-api.fly.dev'; 
 
 const PerfilInvestigador = () => {
     const { id } = useParams(); 
@@ -14,52 +18,52 @@ const PerfilInvestigador = () => {
     const [videos, setVideos] = useState([]);
     const [activeTab, setActiveTab] = useState('resena');
 
+    const { get } = useApi(); // 🚨 Extraemos nuestro ayudante del Hook
+
     useEffect(() => {
         const fetchData = async () => {
             setIsLoading(true);
             try {
-                const invResponse = await fetch(`${API_BASE_URL}/api/investigadores/${id}`);
-                if (!invResponse.ok) throw new Error("Investigador no encontrado");
-                const invData = await invResponse.json();
+                // 1. Cargamos los datos del investigador
+                const invData = await get(`/investigadores/${id}`);
                 setInvestigador(invData);
 
-                // Carga paralela de relacionados
-                const [pubRes, vidRes] = await Promise.all([
-                    fetch(`${API_BASE_URL}/api/publicaciones?autorId=${id}`),
-                    fetch(`${API_BASE_URL}/api/videos?investigadorId=${id}`)
+                // 2. Carga paralela de relacionados usando el Hook
+                // Nota: El backend debe estar preparado para recibir estos filtros
+                const [pubData, vidData] = await Promise.all([
+                    get(`/publicaciones?autorId=${id}`),
+                    get(`/videos?investigadorId=${id}`)
                 ]);
 
-                if (pubRes.ok) setPublicaciones(await pubRes.json());
-                if (vidRes.ok) setVideos(await vidRes.json());
+                setPublicaciones(pubData || []);
+                setVideos(vidData || []);
                 
             } catch (err) {
+                console.error("Error cargando perfil:", err);
                 setError(err.message);
             } finally {
                 setIsLoading(false);
             }
         };
+
         if (id) fetchData();
-    }, [id]);
+    }, [id, get]);
 
     // --- LÓGICA DE FOTO CORREGIDA ---
     const getFotoUrl = () => {
         if (!investigador || !investigador.foto) return '/placeholder-person.jpg';
-        
-        // Si la URL ya es completa (empieza con http), la usamos tal cual
         if (investigador.foto.startsWith('http')) return investigador.foto;
         
-        // Si la ruta no tiene la barra inicial, se la agregamos para evitar http://localhost:3001uploads/...
-        const path = investigador.foto.startsWith('/') 
-            ? investigador.foto 
-            : `/${investigador.foto}`;
-            
-        return `${API_BASE_URL}${path}`;
+        const path = investigador.foto.startsWith('/') ? investigador.foto : `/${investigador.foto}`;
+        return `${SERVER_BASE_URL}${path}`;
     };
 
     const renderVideoEmbed = (url) => {
         const regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
         const match = url.match(regExp);
-        const embedUrl = (match && match[2].length === 11) ? `https://www.youtube.com/embed/${match[2]}` : url;
+        const embedUrl = (match && match[2].length === 11) 
+            ? `https://www.youtube.com/embed/${match[2]}` 
+            : url.replace('http://', 'https://');
         return (
             <div className="ratio ratio-16x9">
                 <iframe src={embedUrl} title="Video" allowFullScreen></iframe>
@@ -88,18 +92,26 @@ const PerfilInvestigador = () => {
                             alt={investigador.nombre}
                             className="rounded-circle img-thumbnail mb-3 shadow-sm"
                             style={{ width: '220px', height: '220px', objectFit: 'cover' }}
-                            onError={(e) => { e.target.src = '/placeholder-person.jpg'; }} // Fallback si la imagen falla
+                            onError={(e) => { e.target.src = '/placeholder-person.jpg'; }}
                         />
                         <h3 className="fw-bold">{investigador.nombre}</h3>
-                        <p className="text-muted"><Briefcase size={16} className="me-1"/> {investigador.area_especializacion || investigador.cargo}</p>
+                        <p className="text-muted">
+                            <Briefcase size={16} className="me-1"/> 
+                            {investigador.area_especializacion || investigador.cargo || 'Investigador'}
+                        </p>
                         
                         <div className="text-start mt-4 bg-white p-3 rounded shadow-sm">
                             <h6 className="small fw-bold text-uppercase text-muted border-bottom pb-2">Contacto</h6>
                             {investigador.email && (
-                                <p className="mb-2 small text-truncate"><Mail size={14} className="me-2 text-primary"/>{investigador.email}</p>
+                                <p className="mb-2 small text-truncate">
+                                    <Mail size={14} className="me-2 text-primary"/>{investigador.email}
+                                </p>
                             )}
                             {investigador.url_perfil && (
-                                <p className="mb-0 small"><LinkIcon size={14} className="me-2 text-primary"/><a href={investigador.url_perfil} target="_blank" rel="noreferrer">Perfil Externo</a></p>
+                                <p className="mb-0 small">
+                                    <LinkIcon size={14} className="me-2 text-primary"/>
+                                    <a href={investigador.url_perfil} target="_blank" rel="noreferrer">Perfil Externo</a>
+                                </p>
                             )}
                         </div>
                     </div>
@@ -115,7 +127,8 @@ const PerfilInvestigador = () => {
                                     >
                                         {tab === 'publicaciones' && <BookOpen size={16} className="me-2"/>}
                                         {tab === 'videos' && <Film size={16} className="me-2"/>}
-                                        {tab} {tab !== 'resena' && `(${tab === 'publicaciones' ? publicaciones.length : videos.length})`}
+                                        {tab === 'resena' ? 'Reseña' : tab} 
+                                        {tab !== 'resena' && ` (${tab === 'publicaciones' ? publicaciones.length : videos.length})`}
                                     </button>
                                 </li>
                             ))}
@@ -123,17 +136,22 @@ const PerfilInvestigador = () => {
 
                         <div className="tab-content">
                             {activeTab === 'resena' && (
-                                <div dangerouslySetInnerHTML={{ __html: investigador.resenaLarga || "Sin biografía." }} className="lh-lg text-secondary" />
+                                <div 
+                                    dangerouslySetInnerHTML={{ __html: investigador.resenaLarga || "Sin biografía disponible." }} 
+                                    className="lh-lg text-secondary" 
+                                />
                             )}
                             {activeTab === 'publicaciones' && (
                                 <div className="list-group">
                                     {publicaciones.map(pub => (
                                         <div key={pub.id} className="list-group-item border-start border-primary border-4 mb-2 shadow-sm">
                                             <h6 className="fw-bold mb-1">{pub.titulo}</h6>
-                                            <small className="text-muted">{pub.revista_congreso} ({new Date(pub.fecha_publicacion).getFullYear()})</small>
+                                            <small className="text-muted">
+                                                {pub.revista_congreso} ({pub.fecha ? new Date(pub.fecha).getFullYear() : 'S/F'})
+                                            </small>
                                         </div>
                                     ))}
-                                    {publicaciones.length === 0 && <p className="text-muted">No hay publicaciones.</p>}
+                                    {publicaciones.length === 0 && <p className="text-muted">No hay publicaciones registradas para este investigador.</p>}
                                 </div>
                             )}
                             {activeTab === 'videos' && (
@@ -146,7 +164,7 @@ const PerfilInvestigador = () => {
                                             </div>
                                         </div>
                                     ))}
-                                    {videos.length === 0 && <p className="text-muted">No hay videos.</p>}
+                                    {videos.length === 0 && <p className="text-muted">No hay videos relacionados.</p>}
                                 </div>
                             )}
                         </div>

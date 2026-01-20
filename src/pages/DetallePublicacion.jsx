@@ -1,9 +1,12 @@
+// src/pages/DetallePublicacion.jsx (CORREGIDO)
+
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { BookOpen, Calendar, User, ArrowLeft, Download, Link as LinkIcon } from 'lucide-react'; 
+import { BookOpen, Calendar, User, ArrowLeft, Download } from 'lucide-react'; 
 import { motion } from 'framer-motion';
+import { useApi } from '../hooks/useApi'; // ✅ Hook integrado
 
-const API_BASE_URL = 'http://localhost:3001';
+const SERVER_BASE_URL = 'https://matinales-chile-api.fly.dev';
 
 const formatDate = (dateString) => {
     if (!dateString) return 'Fecha desconocida';
@@ -20,17 +23,17 @@ const DetallePublicacion = () => {
     const [publicacion, setPublicacion] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
+    
+    const { get } = useApi(); // 🚨 Hook para fetch seguro
 
     useEffect(() => {
         const fetchPublicacion = async () => {
+            setIsLoading(true);
             try {
-                const response = await fetch(`${API_BASE_URL}/api/publicaciones/${id}`);
-                if (!response.ok) {
-                    if (response.status === 404) throw new Error("Publicación no encontrada");
-                    throw new Error(`Error: ${response.statusText}`);
-                }
-                const data = await response.json();
+                // El hook ya maneja el prefijo /api y los errores de conexión
+                const data = await get(`/publicaciones/${id}`);
                 setPublicacion(data);
+                setError(null);
             } catch (err) {
                 console.error("Fallo al cargar la publicación:", err);
                 setError(err.message);
@@ -38,27 +41,31 @@ const DetallePublicacion = () => {
                 setIsLoading(false);
             }
         };
-        fetchPublicacion();
-    }, [id]);
+        
+        if (id) fetchPublicacion();
+    }, [id, get]);
 
-    if (isLoading) return <div className="text-center p-5">Cargando publicación...</div>;
+    if (isLoading) return <div className="text-center p-5 mt-5"><div className="spinner-border text-primary"></div></div>;
     if (error) return <div className="alert alert-danger text-center p-4 m-5">Error: {error}</div>;
     if (!publicacion) return <div className="text-center p-5">La publicación no existe.</div>;
 
-    // --- MEJORA: Lógica de URLs centralizada ---
+    // --- Lógica de URLs corregida ---
     const portadaSrc = publicacion.imagen 
-        ? `${API_BASE_URL}${publicacion.imagen}` 
+        ? `${SERVER_BASE_URL}${publicacion.imagen}` 
         : '/placeholder-book-detail.svg';
 
+    // Maneja tanto links externos como archivos locales subidos al servidor
     const linkDescarga = publicacion.urlDescarga 
-        ? (publicacion.urlDescarga.startsWith('http') ? publicacion.urlDescarga : `${API_BASE_URL}${publicacion.urlDescarga}`)
+        ? (publicacion.urlDescarga.startsWith('http') 
+            ? publicacion.urlDescarga 
+            : `${SERVER_BASE_URL}${publicacion.urlDescarga}`)
         : null;
 
     return (
         <div className="container my-5">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
                 
-                <Link to="/publicaciones" className="btn btn-outline-primary mb-4">
+                <Link to="/publicaciones" className="btn btn-outline-primary mb-4 shadow-sm">
                     <ArrowLeft size={20} className="me-2" />
                     Volver a Publicaciones
                 </Link>
@@ -76,6 +83,7 @@ const DetallePublicacion = () => {
                                     alt={publicacion.titulo}
                                     className="img-fluid"
                                     style={{ width: '100%', maxHeight: '450px', objectFit: 'cover' }}
+                                    onError={(e) => { e.target.src = '/placeholder-book-detail.svg'; }}
                                 />
                             </div>
                             
@@ -84,7 +92,7 @@ const DetallePublicacion = () => {
                                     href={linkDescarga} 
                                     target="_blank" 
                                     rel="noopener noreferrer"
-                                    className="btn btn-success btn-lg w-100 shadow-sm d-flex align-items-center justify-content-center"
+                                    className="btn btn-success btn-lg w-100 shadow-sm d-flex align-items-center justify-content-center py-3"
                                 >
                                     <Download size={22} className="me-2" /> 
                                     Descargar Material
@@ -97,17 +105,17 @@ const DetallePublicacion = () => {
                             <div className="bg-light p-4 rounded mb-4">
                                 <h4 className="mb-3 border-bottom pb-2">Información Académica</h4>
                                 <ul className="list-unstyled">
-                                    <li className="mb-3 d-flex align-items-center">
-                                        <User size={20} className="me-3 text-primary" />
+                                    <li className="mb-3 d-flex align-items-start">
+                                        <User size={20} className="me-3 text-primary mt-1" />
                                         <div><strong>Autores:</strong><br/>{publicacion.autores || 'Equipo de Investigación'}</div>
                                     </li>
-                                    <li className="mb-3 d-flex align-items-center">
-                                        <Calendar size={20} className="me-3 text-primary" />
+                                    <li className="mb-3 d-flex align-items-start">
+                                        <Calendar size={20} className="me-3 text-primary mt-1" />
                                         <div><strong>Fecha de Publicación:</strong><br/>{formatDate(publicacion.fecha)}</div>
                                     </li>
                                     {publicacion.revista_congreso && (
-                                        <li className="mb-3 d-flex align-items-center">
-                                            <BookOpen size={20} className="me-3 text-primary" />
+                                        <li className="mb-3 d-flex align-items-start">
+                                            <BookOpen size={20} className="me-3 text-primary mt-1" />
                                             <div><strong>Publicado en:</strong><br/>{publicacion.revista_congreso}</div>
                                         </li>
                                     )}
@@ -115,8 +123,8 @@ const DetallePublicacion = () => {
                             </div>
 
                             <h4 className="fw-bold mb-3">Resumen</h4>
-                            <p className="lead text-muted text-justify" style={{ fontSize: '1.05rem', lineHeight: '1.6' }}>
-                                {publicacion.resumen}
+                            <p className="text-secondary" style={{ fontSize: '1.1rem', lineHeight: '1.7', textAlign: 'justify' }}>
+                                {publicacion.resumen || "No hay un resumen disponible para esta publicación."}
                             </p>
                         </div>
                     </div>
@@ -126,7 +134,7 @@ const DetallePublicacion = () => {
                         <div className="mt-5 pt-4 border-top">
                             <h4 className="fw-bold mb-4">Detalles Adicionales</h4>
                             <div 
-                                className="additional-content"
+                                className="additional-content lh-lg"
                                 dangerouslySetInnerHTML={{ __html: publicacion.contenidoCompleto }} 
                             />
                         </div>

@@ -1,88 +1,111 @@
-// src/pages/DetalleVideo.jsx (VERSIÓN FINALIZADA Y CON LÓGICA DE EMBED)
+// src/pages/DetalleVideo.jsx (CORREGIDO)
 
 import React, { useState, useEffect } from 'react';
-// ... imports sin cambios
+import { useParams, Link } from 'react-router-dom';
+import { PlayCircle, Calendar, ArrowLeft } from 'lucide-react'; 
+import { motion } from 'framer-motion';
+import { useApi } from '../hooks/useApi'; // ✅ Hook integrado
 
-const API_BASE_URL = 'http://localhost:3001';
+// Helper para fechas
+const formatDate = (dateString) => {
+    if (!dateString) return 'Fecha desconocida';
+    try {
+        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+        return new Date(dateString).toLocaleDateString('es-ES', options);
+    } catch (e) {
+        return dateString;
+    }
+};
 
-// Función auxiliar para formatear la fecha (sin cambios)
-// ... formatDate (sin cambios)
-
-// Función auxiliar para obtener la URL de incrustación (embed) - Mejorada para robustez
+// Función auxiliar para obtener la URL de incrustación (embed)
 const getEmbedUrl = (url) => {
     if (!url || typeof url !== 'string') return '';
     
-    // Regex para extraer el ID de YouTube de la mayoría de formatos de URL
+    // Asegurar HTTPS para evitar bloqueos de contenido mixto
+    let secureUrl = url.replace('http://', 'https://');
+
     const regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-    const match = url.match(regExp);
+    const match = secureUrl.match(regExp);
 
     if (match && match[2].length === 11) {
-        // Es un ID de YouTube válido
         return `https://www.youtube.com/embed/${match[2]}`;
     }
-    // Si no es un formato de YouTube conocido, asumimos que es una URL de embed directa
-    return url;
+    return secureUrl;
 };
 
-
 const DetalleVideo = () => {
-    // ... lógica de fetch y estados sin cambios
+    const { id } = useParams();
+    const [video, setVideo] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
+    
+    const { get } = useApi(); // 🚨 Hook para fetch seguro
 
-    // ... useEffect sin cambios
+    useEffect(() => {
+        const fetchVideo = async () => {
+            setIsLoading(true);
+            try {
+                const data = await get(`/videos/${id}`);
+                setVideo(data);
+                setError(null);
+            } catch (err) {
+                console.error("Error al cargar video:", err);
+                setError(err.message);
+            } finally {
+                setIsLoading(false);
+            }
+        };
 
-    // --- Lógica de Renderizado ---
-    if (isLoading) return <div className="text-center p-5">Cargando video...</div>;
-    if (error) return <div className="alert alert-danger text-center p-4">Error: {error}</div>;
+        if (id) fetchVideo();
+    }, [id, get]);
+
+    if (isLoading) return <div className="text-center p-5 mt-5"><div className="spinner-border text-primary"></div></div>;
+    if (error) return <div className="alert alert-danger text-center p-4 m-5">Error: {error}</div>;
     if (!video) return <div className="text-center p-5">El video solicitado no existe.</div>;
 
-    // Generar la URL de incrustación (embed)
     const embedUrl = getEmbedUrl(video.url_embed); 
 
     return (
         <div className="container my-5">
             <motion.div
-                // ... animación sin cambios
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
             >
-                {/* Botón de Volver */}
-                <Link to="/videos" className="btn btn-outline-primary custom-btn-back mb-4">
+                <Link to="/videos" className="btn btn-outline-primary mb-4 shadow-sm">
                     <ArrowLeft size={20} className="me-2" />
                     Volver a Videos
                 </Link>
 
-                <div className="custom-detail-card card shadow-lg p-5">
+                <div className="card shadow-lg p-4 p-md-5 border-0 rounded-4">
+                    <h1 className="mb-2 text-center fw-bold" style={{ color: '#1a365d' }}>{video.titulo}</h1>
                     
-                    <h1 className="mb-2 text-center" style={{ color: 'var(--color-principal)' }}>{video.titulo}</h1>
-                    
-                    {/* Metadatos */}
                     <p className="text-muted text-center mb-4">
                         <PlayCircle size={16} className="me-1" />
-                        Plataforma: **{video.plataforma || 'Multimedia Externa'}** | 
+                        Plataforma: <strong>{video.plataforma || 'YouTube'}</strong> | 
                         <Calendar size={16} className="ms-3 me-1" />
-                        Fecha de Publicación: **{formatDate(video.fecha_publicacion)}**
+                        Publicado: <strong>{formatDate(video.fecha_publicacion)}</strong>
                     </p>
 
-                    {/* Contenedor de Video Responsivo */}
                     {embedUrl ? (
-                        <div className="text-center mb-5 d-flex justify-content-center">
-                            <div className="custom-video-player">
-                                <iframe
-                                    className="custom-video-playeriframe"
-                                    src={embedUrl}
-                                    title={video.titulo}
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                    allowFullScreen
-                                ></iframe>
-                            </div>
+                        <div className="ratio ratio-16x9 mb-5 shadow-sm rounded-4 overflow-hidden bg-black">
+                            <iframe
+                                src={embedUrl}
+                                title={video.titulo}
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                            ></iframe>
                         </div>
                     ) : (
-                        <div className="alert alert-warning text-center">La URL del video no está disponible o no tiene un formato válido.</div>
+                        <div className="alert alert-warning text-center">Formato de video no compatible.</div>
                     )}
 
-                    {/* Descripción */}
-                    <h2 className="mb-3">Descripción</h2>
-                    <p className="custom-news-contentp text-justify">
-                        {video.descripcion || "No hay descripción disponible para este video."}
-                    </p>
+                    <div className="mx-auto" style={{ maxWidth: '850px' }}>
+                        <h4 className="fw-bold mb-3 border-bottom pb-2">Descripción</h4>
+                        <div className="text-secondary lh-lg" style={{ textAlign: 'justify', fontSize: '1.1rem' }}>
+                            {video.descripcion || "Sin descripción adicional."}
+                        </div>
+                    </div>
                 </div>
             </motion.div>
         </div>

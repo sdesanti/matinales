@@ -1,9 +1,10 @@
-// src/components/PublicacionForm.jsx
 import React, { useState, useEffect } from 'react';
 import { useApi } from '../hooks/useApi';
-import { AlertTriangle, FileText, Upload } from 'lucide-react'; 
+import { AlertTriangle, FileText, Upload, Save, X } from 'lucide-react'; 
 
 const API_ENDPOINT = '/publicaciones';
+// Corregida la URL (tenías un "http://" de más)
+const SERVER_BASE_URL = 'https://matinales-chile-api.fly.dev';
 
 const PublicacionForm = ({ publicacionInicial, onSave, onClose }) => {
     const { post, put } = useApi();
@@ -12,9 +13,9 @@ const PublicacionForm = ({ publicacionInicial, onSave, onClose }) => {
     const [formData, setFormData] = useState({
         titulo: '',
         autores: '',
-        resumen: '', // Cambiado de 'descripcion' a 'resumen'
-        urlDescarga: '', // Cambiado de 'enlace_descarga' a 'urlDescarga'
-        fecha: new Date().toISOString().substring(0, 10), // Cambiado de 'fecha_publicacion' a 'fecha'
+        resumen: '',
+        urlDescarga: '', 
+        fecha: new Date().toISOString().substring(0, 10),
         imagen_actual: '', 
         documento_actual: '', 
     });
@@ -38,11 +39,14 @@ const PublicacionForm = ({ publicacionInicial, onSave, onClose }) => {
                 imagen_actual: publicacionInicial.imagen || '',
                 documento_actual: publicacionInicial.urlDescarga || '',
             });
-            // Si la imagen actual no es externa, le ponemos el prefijo del servidor para la miniatura
-            const thumb = publicacionInicial.imagen 
-                ? (publicacionInicial.imagen.startsWith('http') ? publicacionInicial.imagen : `http://localhost:3001${publicacionInicial.imagen}`)
-                : null;
-            setPreviewUrl(thumb);
+
+            // Lógica de vista previa corregida
+            if (publicacionInicial.imagen) {
+                const thumb = publicacionInicial.imagen.startsWith('http') 
+                    ? publicacionInicial.imagen 
+                    : `${SERVER_BASE_URL}${publicacionInicial.imagen}`;
+                setPreviewUrl(thumb);
+            }
         }
     }, [publicacionInicial]);
 
@@ -53,17 +57,17 @@ const PublicacionForm = ({ publicacionInicial, onSave, onClose }) => {
 
     const handlePortadaChange = (e) => {
         const file = e.target.files[0];
-        setPortadaFile(file);
         if (file) {
+            setPortadaFile(file);
             setPreviewUrl(URL.createObjectURL(file));
-        } else {
-            setPreviewUrl(formData.imagen_actual ? `http://localhost:3001${formData.imagen_actual}` : null);
         }
     };
     
     const handleDocumentoChange = (e) => {
         const file = e.target.files[0];
         setDocumentoFile(file);
+        // Si sube un archivo, limpiamos el campo de URL externa para evitar confusiones
+        if (file) setFormData(prev => ({ ...prev, urlDescarga: '' }));
     };
 
     const handleSubmit = async (e) => {
@@ -77,16 +81,15 @@ const PublicacionForm = ({ publicacionInicial, onSave, onClose }) => {
         dataToSend.append('resumen', formData.resumen);
         dataToSend.append('fecha', formData.fecha);
         
-        // Manejo del PDF / Enlace
+        // 1. Manejo del PDF / URL
         if (documentoFile) {
             dataToSend.append('documento', documentoFile); 
         } else {
-            // Si no hay archivo nuevo, enviamos lo que haya en el campo de texto (URL Drive)
-            // o el valor actual para no perderlo
+            // Enviamos la URL actual (sea link de Drive o ruta del servidor)
             dataToSend.append('urlDescarga', formData.urlDescarga || formData.documento_actual);
         }
 
-        // Manejo de la Portada
+        // 2. Manejo de la Portada
         if (portadaFile) {
             dataToSend.append('portada', portadaFile); 
         } else {
@@ -94,96 +97,116 @@ const PublicacionForm = ({ publicacionInicial, onSave, onClose }) => {
         }
 
         try {
-            let response;
             const endpoint = isEditing ? `${API_ENDPOINT}/${publicacionInicial.id}` : API_ENDPOINT;
-            
-            if (isEditing) {
-                response = await put(endpoint, dataToSend, true); 
-            } else {
-                response = await post(endpoint, dataToSend, true);
-            }
+            // IMPORTANTE: Pasamos 'true' como tercer argumento para indicar multipart/form-data
+            const response = isEditing 
+                ? await put(endpoint, dataToSend, true) 
+                : await post(endpoint, dataToSend, true);
 
-            onSave(response.data || response); 
+            onSave(response); 
         } catch (err) {
-            setError(err.message || 'Error al guardar.');
+            setError(err.message || 'Error al guardar la publicación.');
         } finally {
             setIsSubmitting(false);
         }
     };
 
     return (
-        <form onSubmit={handleSubmit} className="p-3">
-            <h3 className="mb-4 text-primary">{isEditing ? '📝 Editar Publicación' : '📚 Nueva Publicación'}</h3>
+        <form onSubmit={handleSubmit} className="p-2">
+            {error && (
+                <div className="alert alert-danger d-flex align-items-center">
+                    <AlertTriangle size={20} className="me-2" />
+                    {error}
+                </div>
+            )}
 
-            {error && <div className="alert alert-danger"><AlertTriangle size={20} className="me-2" />{error}</div>}
-
-            <div className="mb-3">
-                <label className="form-label fw-bold">Título *</label>
-                <input type="text" className="form-control" name="titulo" value={formData.titulo} onChange={handleChange} required />
-            </div>
-            
             <div className="row">
-                <div className="col-md-8 mb-3">
-                    <label className="form-label fw-bold">Autores</label>
-                    <input type="text" className="form-control" name="autores" value={formData.autores} onChange={handleChange} placeholder="Ej: Juan Pérez, María García" />
-                </div>
-                <div className="col-md-4 mb-3">
-                    <label className="form-label fw-bold">Fecha *</label>
-                    <input type="date" className="form-control" name="fecha" value={formData.fecha} onChange={handleChange} required />
-                </div>
-            </div>
+                {/* Columna Campos de Texto */}
+                <div className="col-md-8">
+                    <div className="mb-3">
+                        <label className="form-label fw-bold">Título de la Publicación</label>
+                        <input type="text" className="form-control form-control-lg" name="titulo" value={formData.titulo} onChange={handleChange} required placeholder="Ej: Impacto de la IA en la Educación" />
+                    </div>
 
-            <div className="mb-3">
-                <label className="form-label fw-bold">Resumen / Descripción</label>
-                <textarea className="form-control" name="resumen" rows="4" value={formData.resumen} onChange={handleChange}></textarea>
-            </div>
-            
-            <hr/>
-            
-            <div className="row g-4">
-                {/* PORTADA */}
-                <div className="col-md-6">
-                    <div className="card h-100 bg-light border-dashed">
-                        <div className="card-body text-center">
-                            <label className="form-label fw-bold d-block mb-3">Imagen de Portada</label>
-                            {previewUrl && (
-                                <img src={previewUrl} alt="Preview" className="img-thumbnail mb-3" style={{ height: '120px', objectFit: 'cover' }} />
-                            )}
-                            <input type="file" className="form-control" accept="image/*" onChange={handlePortadaChange} />
+                    <div className="row">
+                        <div className="col-md-7 mb-3">
+                            <label className="form-label fw-bold">Autores</label>
+                            <input type="text" className="form-control" name="autores" value={formData.autores} onChange={handleChange} placeholder="Separados por comas" />
                         </div>
+                        <div className="col-md-5 mb-3">
+                            <label className="form-label fw-bold">Fecha de Publicación</label>
+                            <input type="date" className="form-control" name="fecha" value={formData.fecha} onChange={handleChange} required />
+                        </div>
+                    </div>
+
+                    <div className="mb-3">
+                        <label className="form-label fw-bold">Resumen Ejecutivo</label>
+                        <textarea className="form-control" name="resumen" rows="6" value={formData.resumen} onChange={handleChange} placeholder="Escribe una breve descripción del contenido..."></textarea>
                     </div>
                 </div>
 
-                {/* DOCUMENTO */}
-                <div className="col-md-6">
-                    <div className="card h-100 bg-light">
+                {/* Columna Archivos y Multimedia */}
+                <div className="col-md-4">
+                    <div className="card shadow-sm border-0 bg-light mb-3">
                         <div className="card-body">
-                            <label className="form-label fw-bold d-block mb-3">Archivo PDF o Documento</label>
-                            <div className="p-2 border rounded bg-white mb-2 small text-truncate text-muted">
-                                <FileText size={16} className="me-2" />
-                                {documentoFile ? documentoFile.name : (formData.documento_actual || 'Sin archivo')}
+                            <label className="form-label fw-bold d-flex align-items-center">
+                                <Upload size={18} className="me-2 text-primary"/> Portada
+                            </label>
+                            <div className="text-center mb-3">
+                                {previewUrl ? (
+                                    <img src={previewUrl} alt="Preview" className="img-fluid rounded shadow-sm" style={{ maxHeight: '180px', border: '2px solid #dee2e6' }} />
+                                ) : (
+                                    <div className="py-5 border rounded bg-white text-muted">Sin imagen</div>
+                                )}
                             </div>
-                            <input type="file" className="form-control mb-3" accept=".pdf,.doc,.docx" onChange={handleDocumentoChange} />
+                            <input type="file" className="form-control form-control-sm" accept="image/*" onChange={handlePortadaChange} />
+                        </div>
+                    </div>
+
+                    <div className="card shadow-sm border-0 bg-light">
+                        <div className="card-body">
+                            <label className="form-label fw-bold d-flex align-items-center">
+                                <FileText size={18} className="me-2 text-success"/> Documento (PDF)
+                            </label>
                             
-                            <label className="form-label small fw-bold">O Link externo (Drive/Dropbox)</label>
+                            {/* Mostrar archivo actual */}
+                            <div className="mb-2 small p-2 bg-white rounded border text-truncate">
+                                <strong>Actual:</strong> {documentoFile ? documentoFile.name : (formData.documento_actual?.split('/').pop() || 'Ninguno')}
+                            </div>
+
+                            <input type="file" className="form-control form-control-sm mb-3" accept=".pdf" onChange={handleDocumentoChange} />
+                            
+                            <div className="separator mb-3 text-center"><small className="text-muted px-2 bg-light">O LINK EXTERNO</small></div>
+
                             <input 
                                 type="url" 
                                 className="form-control form-control-sm" 
                                 name="urlDescarga" 
-                                value={documentoFile ? '' : formData.urlDescarga} 
+                                value={formData.urlDescarga} 
                                 onChange={handleChange} 
+                                placeholder="https://drive.google.com/..."
                                 disabled={!!documentoFile}
-                                placeholder="https://..."
                             />
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div className="d-flex justify-content-end mt-4 pt-3 border-top">
-                <button type="button" className="btn btn-light me-2" onClick={onClose} disabled={isSubmitting}>Cancelar</button>
-                <button type="submit" className="btn btn-primary px-4" disabled={isSubmitting}>
-                    {isSubmitting ? 'Guardando...' : 'Confirmar Guardado'}
+            <div className="mt-4 pt-3 border-top d-flex justify-content-between">
+                <button type="button" className="btn btn-outline-secondary px-4" onClick={onClose} disabled={isSubmitting}>
+                    <X size={18} className="me-1"/> Cancelar
+                </button>
+                <button type="submit" className="btn btn-primary px-5 shadow" disabled={isSubmitting}>
+                    {isSubmitting ? (
+                        <>
+                            <span className="spinner-border spinner-border-sm me-2"></span>
+                            Guardando...
+                        </>
+                    ) : (
+                        <>
+                            <Save size={18} className="me-1"/> {isEditing ? 'Actualizar' : 'Publicar'}
+                        </>
+                    )}
                 </button>
             </div>
         </form>

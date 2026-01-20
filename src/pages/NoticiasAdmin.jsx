@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
 import NoticiaForm from '../components/NoticiaForm';
 import { Plus, Edit, Trash2, Loader2, AlertTriangle, FileText } from 'lucide-react';
+import { useApi } from '../hooks/useApi'; // 🚨 Importamos useApi
 
 const NoticiasAdmin = () => {
     // 1. Estados de la Interfaz

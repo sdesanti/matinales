@@ -5,7 +5,7 @@ import { PlusCircle, Edit, Trash2, Download, BookOpen, Loader2, AlertTriangle, F
 import PublicacionForm from '../components/PublicacionForm';
 import { useApi } from '../hooks/useApi'; // 🚨 Importamos useApi
 
-const API_BASE_URL = 'http://localhost:3001';
+const API_BASE_URL = 'https://matinales-chile-api.fly.dev';
 const API_ENDPOINT = '/publicaciones'; // Endpoint usado por useApi
 
 // Función para obtener la URL completa (para portada o archivo)
@@ -153,11 +153,10 @@ const AdminPublicacionesManagement = () => {
                                         {/* Celda de Portada */}
                                         <td>
                                             <img 
-                                                src={getResourceUrl(pub.portada_url)} 
-                                                alt={`Portada de ${pub.titulo}`}
-                                                style={{ width: '50px', height: '70px', objectFit: 'cover' }}
-                                                className="img-thumbnail"
-                                                onError={(e) => { e.target.onerror = null; e.target.src = '/placeholder-book.svg'; }}
+                                                src={pub.imagen ? (pub.imagen.startsWith('http') ? pub.imagen : `${API_BASE_URL}${pub.imagen}`) : '/placeholder-book.svg'} 
+                                                alt="Portada"
+                                                style={{ width: '45px', height: '60px', objectFit: 'cover' }}
+                                                className="rounded shadow-sm"
                                             />
                                         </td>
 

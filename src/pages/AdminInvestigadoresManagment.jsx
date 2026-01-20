@@ -1,6 +1,7 @@
 // src/pages/AdminInvestigadoresManagement.jsx
 
 import React from 'react';
+import { useApi } from '../hooks/useApi'; // 🚨 Importamos useApi
 
 const AdminInvestigadoresManagement = () => {
     return (

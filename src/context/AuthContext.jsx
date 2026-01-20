@@ -3,7 +3,7 @@ import React, { createContext, useState, useContext, useEffect, useCallback } fr
 import { jwtDecode } from 'jwt-decode'; // <-- USAMOS NAMED IMPORT
 
 const AuthContext = createContext(null);
-const API_URL = 'https://matinales-chile-api.fly.dev/';
+const API_URL = 'https://matinales-chile-api.fly.dev';
 
 export const AuthProvider = ({ children }) => {
     // 1. Estados
@@ -55,7 +55,7 @@ export const AuthProvider = ({ children }) => {
         // 🚨 Eliminamos la re-definición redundante de handleLogout aquí.
         
         try {
-            const response = await fetch(API_URL, {
+            const response = await fetch(`${API_URL}/api/login`, { // 🚨 AGREGAR /api/login
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, password }),
