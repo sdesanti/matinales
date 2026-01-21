@@ -12,21 +12,21 @@ const tarjetas = [
         titulo: 'Publicaciones recientes',
         texto: 'Revisa los artículos y libros desarrollados por el proyecto.',
         icono: <BookOpen size={40} color="#F45A29" />,
-        link: '/publicaciones',
+        link: 'https://sdesanti.github.io/matinales/publicaciones',
         textoBoton: 'Ver más'
     },
     {
         titulo: 'Investigadores',
         texto: 'Conoce a quienes forman parte del equipo y sus líneas de investigación.',
         icono: <Users size={40} color="#F45A29" />,
-        link: '/investigadores',
+        link: 'https://sdesanti.github.io/matinales/investigadores',
         textoBoton: 'Conocer'
     },
     {
         titulo: 'Noticias',
         texto: 'Infórmate sobre las actividades recientes del equipo y sus impactos.',
         icono: <Newspaper size={40} color="#F45A29" />,
-        link: '/noticias',
+        link: 'https://sdesanti.github.io/matinales/noticias',
         textoBoton: 'Ir a noticias'
     }
 ];
@@ -209,7 +209,7 @@ function Home() {
                 >
                     <h2 style={{ color: 'white' }}>¿Quieres saber más sobre el proyecto?</h2>
                     <p className="lead" style={{ color: 'white' }}>Explora nuestros videos, conoce a fondo los investigadores, o contáctanos directamente.</p>
-                    <a href="/videos" className="btn-modern btn-cta-secondary">
+                    <a href="https://sdesanti.github.io/matinales/videos" className="btn-modern btn-cta-secondary">
                         Ver videos destacados
                     </a>
                 </motion.div>
