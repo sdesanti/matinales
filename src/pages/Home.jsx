@@ -158,7 +158,27 @@ function Home() {
                 </div>
             </section>
 
-            {/* 5. Llamada a la Acción (CTA) Final */}
+            {/* 5. VIDEO DESTACADO */}
+            <section className="video-section py-5 bg-light">
+                <div className="container">
+                    <h2 className="text-center mb-4 titulo-principal-seccion">
+                        Conoce nuestro Proyecto
+                    </h2>
+                    <div className="video-center-container">
+                        <div className="video-responsive rounded-3 shadow-lg">
+                            <iframe
+                                src="https://www.youtube.com/embed/zEqfuYVCDoA?si=6ICQmytWbugUz3Ni"
+                                title="YouTube video player"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                referrerPolicy="strict-origin-when-cross-origin"
+                                allowFullScreen
+                            ></iframe>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* 6. Llamada a la Acción (CTA) Final */}
             <section className="cta-final text-center py-5" style={{ backgroundColor: '#C3423F' }}>
                 <motion.div className="container" initial={{ opacity: 0 }} whileInView={{ opacity: 1 }}>
                     <h2 style={{ color: 'white' }}>¿Quieres saber más?</h2>
