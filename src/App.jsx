@@ -14,6 +14,7 @@ import Investigadores from './pages/Investigadores'
 import Publicaciones from './pages/Publicaciones'
 import Noticias from './pages/Noticias'
 import Videos from './pages/Videos'
+import Contacto from './pages/Contacto'
 import PerfilInvestigador from './pages/PerfilInvestigador'
 import DetalleNoticia from './pages/DetalleNoticia'
 import DetallePublicacion from './pages/DetallePublicacion'
@@ -57,6 +58,7 @@ function App() {
                 <Route path="/publicaciones" element={<Publicaciones />} />
                 <Route path="/noticias" element={<Noticias />} />
                 <Route path="/videos" element={<Videos />} />
+                <Route path="/contacto" element={<Contacto />} />
                 
                 {/* Rutas de detalle */}
                 <Route path="/investigadores/:id" element={<PerfilInvestigador />} />

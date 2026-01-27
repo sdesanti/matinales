@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'; // ✅ Importación CRITICA para evitar
 import { BookOpen, Users, Newspaper, Zap } from 'lucide-react';
 
 // Importación de imágenes
-import CENTRAL_PROJECT_IMAGE from '../assets/foto1.jpg'; 
+import CENTRAL_PROJECT_IMAGE from '../assets/equipomatinal2025.jpg'; 
 import HERO_BACKGROUND_IMAGE from '../assets/luchadematinales.jpg';
 
 const tarjetas = [

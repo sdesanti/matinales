@@ -41,6 +41,9 @@ const Navbar = () => {
                         <li className="nav-item">
                             <Link className="nav-link" to="/videos">Videos</Link>
                         </li>
+                        <li className="nav-item">
+                            <Link className="nav-link" to="/contacto">Contacto</Link>
+                        </li>
                     </ul>
 
                     <div className="d-flex">
