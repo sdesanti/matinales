@@ -144,7 +144,7 @@ function Home() {
             {/* 4. Visualización de Datos (Flourish) */}
             <section className="seccion-flourish py-5">
                 <div className="container">
-                    <h2 className="text-center mb-4 titulo-principal-seccion">Análisis de Datos</h2>
+                    <h2 className="text-center mb-4 titulo-principal-seccion">Hitos históricos de los matinales</h2>
                     <div className="flourish-embed-wrapper shadow-lg rounded-3 overflow-hidden">
                         <iframe
                             src="https://public.flourish.studio/visualisation/23960241/embed"

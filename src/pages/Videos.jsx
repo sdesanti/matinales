@@ -78,7 +78,7 @@ const Videos = () => {
 
     return (
         <div className="container my-5">
-            <h1 className="mb-5 custom-h1 text-center">Videos y Multimedia</h1>
+            <h1 className="mb-5 custom-h1 text-center">Videos y Podcast</h1>
 
             <div className="row g-4">
                 {videos.map((video, index) => {
